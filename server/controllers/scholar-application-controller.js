@@ -40,6 +40,7 @@ class ScholarApplicationController {
         applicationId: req.params.applicationId,
         reviewerPublicId: req.user.publicId,
         status: req.body.status,
+        reviewerNote: req.body.reviewerNote ?? null,
       });
       return sendResponse(res, 'success', { message: 'Application reviewed successfully', data: response });
     } catch (err) {

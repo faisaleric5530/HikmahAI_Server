@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       reviewed_by: { type: DataTypes.UUID, allowNull: true },
       reviewed_at: { type: DataTypes.DATE, allowNull: true },
+      reviewer_note: { type: DataTypes.TEXT, allowNull: true },
       created_at: { allowNull: false, type: DataTypes.DATE, defaultValue: DataTypes.NOW },
       updated_at: { allowNull: false, type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     },
