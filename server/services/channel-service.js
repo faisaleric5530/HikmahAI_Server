@@ -29,6 +29,7 @@ const toPublicQuestion = (question) => ({
   title: question.title,
   body: question.body,
   authorName: maskName(question.author),
+  authorPublicId: question.author ? question.author.public_id : undefined,
   createdAt: question.created_at,
   updatedAt: question.updated_at,
 });
@@ -38,6 +39,7 @@ const toPublicReply = (reply) => ({
   questionId: reply.question_id,
   body: reply.body,
   authorName: maskName(reply.author),
+  authorPublicId: reply.author ? reply.author.public_id : undefined,
   authorRole: reply.author ? reply.author.role : undefined,
   isVerifiedAnswer: reply.is_verified_answer,
   verifiedAt: reply.verified_at,
@@ -84,17 +86,34 @@ const createChannel = async ({ name, description, colorVariant, createdBy }) => 
   }
 };
 
+const toPublicQuestionWithReplies = (question) => {
+  const replies = (question.replies ?? []).map(toPublicReply);
+  return {
+    ...toPublicQuestion(question),
+    isVerifiedAnswer: replies.some((r) => r.isVerifiedAnswer),
+    replies,
+  };
+};
+
 const listQuestions = async ({ channelId }) => {
   try {
     await findChannelOrThrow(channelId);
 
     const questions = await QuestionModel.findAll({
       where: { channel_id: channelId },
-      include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity'] }],
-      order: [['created_at', 'DESC']],
+      include: [
+        { model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity'] },
+        {
+          model: ReplyModel,
+          include: [
+            { model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity', 'role'] },
+          ],
+        },
+      ],
+      order: [['created_at', 'DESC'], [ReplyModel, 'created_at', 'ASC']],
     });
 
-    return questions.map(toPublicQuestion);
+    return questions.map(toPublicQuestionWithReplies);
   } catch (err) {
     if (err instanceof APIError) throw err;
     throw new ServiceErrorHandler(err, 'ChannelService::listQuestions');
