@@ -5,7 +5,9 @@ const modelLoader = require('./models');
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
+const sequelize = dbConfig.use_env_variable
+  ? new Sequelize(process.env[dbConfig.use_env_variable], dbConfig)
+  : new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
 
 const database = modelLoader(sequelize);
 database.sequelize = sequelize;

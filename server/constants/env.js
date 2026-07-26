@@ -5,9 +5,10 @@ const env = cleanEnv(process.env, {
   PORT: port({ default: 4000 }),
   NODE_ENV: str({ default: 'development' }),
 
-  DB_NAME: str(),
-  DB_USER: str(),
-  DB_PASSWORD: str(),
+  DATABASE_URL: str({ default: '' }),
+  DB_NAME: str({ default: '' }),
+  DB_USER: str({ default: '' }),
+  DB_PASSWORD: str({ default: '' }),
   DB_HOST: str({ default: 'localhost' }),
   DB_PORT: port({ default: 5432 }),
   DB_SCHEMA: str({ default: 'hikmah' }),
