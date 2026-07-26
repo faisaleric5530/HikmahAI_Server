@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       content: { type: DataTypes.TEXT, allowNull: false },
       detected_lang: { type: DataTypes.STRING(5), allowNull: true },
       sources: { type: DataTypes.JSONB, allowNull: true },
+      suggested_channel: { type: DataTypes.JSONB, allowNull: true },
       provider: { type: DataTypes.STRING(20), allowNull: true },
       created_at: { allowNull: false, type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     },

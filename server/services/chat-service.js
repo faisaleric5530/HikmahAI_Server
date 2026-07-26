@@ -1,5 +1,9 @@
 const { v4: uuidv4 } = require('uuid');
-const { chat_session: ChatSessionModel, chat_message: ChatMessageModel } = require('../../database');
+const {
+  chat_session: ChatSessionModel,
+  chat_message: ChatMessageModel,
+  channel: ChannelModel,
+} = require('../../database');
 const { APIError, ServiceErrorHandler } = require('../exceptions');
 const aiService = require('./ai');
 
@@ -16,6 +20,7 @@ const toPublicMessage = (message) => ({
   content: message.content,
   detectedLang: message.detected_lang,
   sources: message.sources || [],
+  suggestedChannel: message.suggested_channel || null,
   createdAt: message.created_at,
 });
 
@@ -88,8 +93,13 @@ const sendMessage = async ({ userId, sessionId, content }) => {
       content,
     });
 
+    const channels = await ChannelModel.findAll({
+      attributes: ['public_id', 'name', 'description', 'color_variant'],
+      order: [['created_at', 'ASC']],
+    });
+
     const aiMessages = [...history, userMessage].map((m) => ({ role: m.role, content: m.content }));
-    const { reply, provider } = await aiService.generateReply(aiMessages);
+    const { reply, provider, suggestedChannel } = await aiService.generateReply(aiMessages, { channels });
 
     const assistantMessage = await ChatMessageModel.create({
       public_id: uuidv4(),
@@ -97,6 +107,7 @@ const sendMessage = async ({ userId, sessionId, content }) => {
       role: 'assistant',
       content: reply,
       provider,
+      suggested_channel: suggestedChannel,
     });
 
     if (session.title === 'New Chat') {
