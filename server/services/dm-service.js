@@ -4,6 +4,8 @@ const { Op } = require('sequelize');
 const { dm_conversation, dm_message, user } = require('../../database');
 const { APIError, ServiceErrorHandler } = require('../exceptions');
 
+const ts = (record) => record.createdAt ?? record.created_at ?? null;
+
 const toPublicConversation = (conv, myPublicId) => {
   const other = conv.user_id === myPublicId ? conv.scholar : conv.user;
   const messages = conv.dm_messages ?? [];
@@ -15,7 +17,7 @@ const toPublicConversation = (conv, myPublicId) => {
     otherUserName: other.name,
     otherUserRole: other.role,
     lastMessage: lastMsg ? lastMsg.body : null,
-    lastMessageAt: lastMsg ? lastMsg.created_at : conv.created_at,
+    lastMessageAt: lastMsg ? ts(lastMsg) : ts(conv),
     unreadCount,
   };
 };
@@ -26,7 +28,7 @@ const toPublicMessage = (msg) => ({
   senderId: msg.sender_id,
   body: msg.body,
   isRead: msg.is_read,
-  createdAt: msg.created_at,
+  createdAt: ts(msg),
 });
 
 const startOrGetConversation = async (callerPublicId, scholarPublicId) => {
