@@ -1,14 +1,14 @@
 {
   "name": "hikmah-ai-backend",
   "version": "1.0.0",
-  "description": "HikmahAI backend API — auth, channels, blogs, chat sessions",
+  "description": "HikmahAI backend API \u2014 auth, channels, blogs, chat sessions",
   "main": "./server/app.js",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "dev": "nodemon ./server/app.js",
-    "start": "npx sequelize db:migrate && node ./server/app.js",
+    "dev": "node api.js && nodemon ./server/app.js",
+    "start": "node api.js && npx sequelize db:migrate && node ./server/app.js",
     "migrate": "npx sequelize db:migrate",
     "migrate:undo": "npx sequelize db:migrate:undo",
     "seed": "npx sequelize db:seed:all",
