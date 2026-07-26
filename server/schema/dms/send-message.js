@@ -2,8 +2,8 @@
 
 const { z } = require('zod');
 
-module.exports = {
+module.exports = z.object({
   body: z.object({
     body: z.string().min(1).max(2000),
   }),
-};
+});
