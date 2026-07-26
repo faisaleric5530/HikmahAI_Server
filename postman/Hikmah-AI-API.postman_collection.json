@@ -1,0 +1,685 @@
+{
+  "info": {
+    "name": "Hikmah AI API",
+    "description": "HikmahAI backend: auth, AI-backed chat sessions, scholar applications, channels/Q&A, blogs. AI_PROVIDER env var switches chat replies between OpenAI and Claude. Roles: user -> scholar (via approved application) -> admin (promoted manually, e.g. directly in DB for the first admin).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "user2_token", "value": "" },
+    { "key": "admin_token", "value": "" },
+    { "key": "session_id", "value": "" },
+    { "key": "application_id", "value": "" },
+    { "key": "channel_id", "value": "" },
+    { "key": "question_id", "value": "" },
+    { "key": "reply_id", "value": "" },
+    { "key": "blog_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('token', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@hikmah.ai\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register (duplicate email -> 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@hikmah.ai\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register (weak password -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weak Pass\",\n  \"email\": \"weakpass@hikmah.ai\",\n  \"password\": \"weak\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Second User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('user2_token', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Second User\",\n  \"email\": \"seconduser@hikmah.ai\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('token', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@hikmah.ai\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (wrong password -> 401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@hikmah.ai\",\n  \"password\": \"WrongPass1!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/auth/profile", "host": ["{{base_url}}"], "path": ["auth", "profile"] }
+          }
+        },
+        {
+          "name": "Get Profile (no token -> 401)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/auth/profile", "host": ["{{base_url}}"], "path": ["auth", "profile"] }
+          }
+        },
+        {
+          "name": "Login as Admin (after manual DB promotion)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('admin_token', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seconduser@hikmah.ai\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scholar Applications",
+      "item": [
+        {
+          "name": "Submit Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('application_id', body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/scholar-applications", "host": ["{{base_url}}"], "path": ["scholar-applications"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test User\",\n  \"qualifications\": \"Ijazah in Hadith, 10 years teaching experience\",\n  \"ijazah\": \"https://example.com/ijazah.pdf\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit Application (duplicate pending -> 409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/scholar-applications", "host": ["{{base_url}}"], "path": ["scholar-applications"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test User\",\n  \"qualifications\": \"Another application text here\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Application Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/scholar-applications/me", "host": ["{{base_url}}"], "path": ["scholar-applications", "me"] }
+          }
+        },
+        {
+          "name": "List Applications (non-admin -> 403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/scholar-applications", "host": ["{{base_url}}"], "path": ["scholar-applications"] }
+          }
+        },
+        {
+          "name": "List Applications (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/scholar-applications", "host": ["{{base_url}}"], "path": ["scholar-applications"] }
+          }
+        },
+        {
+          "name": "Review Application (approve, admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/scholar-applications/{{application_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["scholar-applications", "{{application_id}}"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"approved\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Channels & Q&A",
+      "item": [
+        {
+          "name": "Create Channel (non-admin -> 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/channels", "host": ["{{base_url}}"], "path": ["channels"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fiqh\",\n  \"description\": \"Islamic jurisprudence questions\",\n  \"colorVariant\": \"blue\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Channel (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('channel_id', body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/channels", "host": ["{{base_url}}"], "path": ["channels"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fiqh\",\n  \"description\": \"Islamic jurisprudence questions\",\n  \"colorVariant\": \"blue\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Channels",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/channels", "host": ["{{base_url}}"], "path": ["channels"] }
+          }
+        },
+        {
+          "name": "Get Channel",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/channels/{{channel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["channels", "{{channel_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Post Question",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('question_id', body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/channels/{{channel_id}}/questions",
+              "host": ["{{base_url}}"],
+              "path": ["channels", "{{channel_id}}", "questions"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Is combining prayers allowed while traveling?\",\n  \"body\": \"I travel frequently for work, can I combine Dhuhr and Asr?\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Questions in Channel",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/channels/{{channel_id}}/questions",
+              "host": ["{{base_url}}"],
+              "path": ["channels", "{{channel_id}}", "questions"]
+            }
+          }
+        },
+        {
+          "name": "Post Reply",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/questions/{{question_id}}/replies",
+              "host": ["{{base_url}}"],
+              "path": ["questions", "{{question_id}}", "replies"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Yes, combining prayers (Jam) is permissible while traveling per majority scholarly opinion.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Question (with replies)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data.replies && body.data.replies.length) {",
+                  "    pm.collectionVariables.set('reply_id', body.data.replies[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/questions/{{question_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["questions", "{{question_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Verify Reply (non-scholar -> 403)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/replies/{{reply_id}}/verify",
+              "host": ["{{base_url}}"],
+              "path": ["replies", "{{reply_id}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Verify Reply (scholar/admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/replies/{{reply_id}}/verify",
+              "host": ["{{base_url}}"],
+              "path": ["replies", "{{reply_id}}", "verify"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blogs",
+      "item": [
+        {
+          "name": "Create Blog (non-scholar -> 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/blogs", "host": ["{{base_url}}"], "path": ["blogs"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My thoughts\",\n  \"body\": \"<p>Some content</p>\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Blog (scholar/admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('blog_id', body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/blogs", "host": ["{{base_url}}"], "path": ["blogs"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Virtue of Seeking Knowledge\",\n  \"body\": \"<p>Seeking knowledge is an obligation upon every Muslim.</p>\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Blogs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/blogs", "host": ["{{base_url}}"], "path": ["blogs"] }
+          }
+        },
+        {
+          "name": "Get Blog",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/blogs/{{blog_id}}", "host": ["{{base_url}}"], "path": ["blogs", "{{blog_id}}"] }
+          }
+        },
+        {
+          "name": "Update Blog (non-owner -> 403)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/blogs/{{blog_id}}", "host": ["{{base_url}}"], "path": ["blogs", "{{blog_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Hijacked title\"\n}" }
+          }
+        },
+        {
+          "name": "Update Blog (owner/admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/blogs/{{blog_id}}", "host": ["{{base_url}}"], "path": ["blogs", "{{blog_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Virtue of Seeking Knowledge (Updated)\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Blog",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/blogs/{{blog_id}}", "host": ["{{base_url}}"], "path": ["blogs", "{{blog_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Create Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('session_id', body.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/chat/sessions", "host": ["{{base_url}}"], "path": ["chat", "sessions"] }
+          }
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/chat/sessions", "host": ["{{base_url}}"], "path": ["chat", "sessions"] }
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/chat/sessions/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["chat", "sessions", "{{session_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Session (malformed id -> 400)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/chat/sessions/not-a-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["chat", "sessions", "not-a-uuid"]
+            }
+          }
+        },
+        {
+          "name": "Get Session (other user's id -> 404)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user2_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/chat/sessions/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["chat", "sessions", "{{session_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chat/sessions/{{session_id}}/messages",
+              "host": ["{{base_url}}"],
+              "path": ["chat", "sessions", "{{session_id}}", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"What does the Quran say about seeking knowledge?\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send Message (empty content -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chat/sessions/{{session_id}}/messages",
+              "host": ["{{base_url}}"],
+              "path": ["chat", "sessions", "{{session_id}}", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Session",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/chat/sessions/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["chat", "sessions", "{{session_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}
