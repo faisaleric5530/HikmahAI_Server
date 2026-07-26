@@ -7,6 +7,7 @@ const reviewApplicationSchema = z.object({
   }),
   body: z.object({
     status: z.enum(['approved', 'rejected'], { required_error: 'status is required' }),
+    reviewerNote: z.string().max(500).optional(),
   }),
 });
 

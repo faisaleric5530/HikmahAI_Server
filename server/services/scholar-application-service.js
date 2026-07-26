@@ -12,6 +12,7 @@ const toPublicApplication = (application) => ({
   qualifications: application.qualifications,
   ijazah: application.ijazah,
   status: application.status,
+  reviewerNote: application.reviewer_note ?? null,
   reviewedAt: application.reviewed_at,
   createdAt: application.created_at,
   updatedAt: application.updated_at,
@@ -76,7 +77,7 @@ const listApplications = async ({ status }) => {
   }
 };
 
-const review = async ({ applicationId, reviewerPublicId, status }) => {
+const review = async ({ applicationId, reviewerPublicId, status, reviewerNote }) => {
   const transaction = await sequelize.transaction();
 
   try {
@@ -88,7 +89,7 @@ const review = async ({ applicationId, reviewerPublicId, status }) => {
     if (application.status !== 'pending') throw APIError.Conflict('This application has already been reviewed');
 
     await application.update(
-      { status, reviewed_by: reviewerPublicId, reviewed_at: new Date() },
+      { status, reviewed_by: reviewerPublicId, reviewed_at: new Date(), reviewer_note: reviewerNote ?? null },
       { transaction }
     );
 
