@@ -44,13 +44,9 @@ const buildChannelSection = (channels) => {
     .join('\n');
 
   return (
-    `\n\nIf the user's question is personal to their own situation, hypothetical, ` +
-    `or something you cannot answer with confidence, do not guess. Instead, briefly ` +
-    `explain that a community channel would serve them better, and end your reply ` +
-    `with exactly one machine-readable tag on its own, in this exact format: ` +
-    `[[CHANNEL: <slug>]]\n` +
-    `Only choose a slug from this list — never invent one that isn't listed, and only ` +
-    `include the tag when a channel is genuinely the better next step:\n${list}`
+    `\n\nIf the question is personal, hypothetical, or uncertain, don't guess — ` +
+    `suggest a channel instead and end your reply with exactly: [[CHANNEL: <slug>]]. ` +
+    `Only use a slug below, and only when it truly helps:\n${list}`
   );
 };
 
