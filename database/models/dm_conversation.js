@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       user_id:    { type: DataTypes.UUID, allowNull: false },
       scholar_id: { type: DataTypes.UUID, allowNull: false },
     },
-    { underscored: true }
+    { freezeTableName: true, underscored: true }
   );
 
   DmConversation.associate = (models) => {

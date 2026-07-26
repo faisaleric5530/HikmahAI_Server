@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       body:            { type: DataTypes.TEXT, allowNull: false },
       is_read:         { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     },
-    { underscored: true }
+    { freezeTableName: true, underscored: true }
   );
 
   DmMessage.associate = (models) => {
