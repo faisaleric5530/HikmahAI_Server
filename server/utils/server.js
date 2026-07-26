@@ -16,6 +16,7 @@ const replyRouter = require('../routes/replies');
 const blogRouter = require('../routes/blogs');
 const userRouter = require('../routes/users');
 const dmRouter = require('../routes/dms');
+const statsRouter = require('../routes/stats');
 
 function createServer() {
   const app = express();
@@ -43,6 +44,7 @@ function createServer() {
   app.use(`${versionPrefix}/blogs`, blogRouter);
   app.use(`${versionPrefix}/users`, userRouter);
   app.use(`${versionPrefix}/dms`, dmRouter);
+  app.use(`${versionPrefix}/stats`, statsRouter);
 
   app.use((req, res) =>
     sendResponse(res, 'error', {
