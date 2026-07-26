@@ -17,13 +17,13 @@ const env = cleanEnv(process.env, {
   JWT_EXPIRY: str({ default: '7d' }),
   JWT_ISSUER: str({ default: 'hikmah-ai-backend' }),
 
-  AI_PROVIDER: str({ choices: ['openai', 'claude', 'openrouter', 'mock'], default: 'mock' }),
+  AI_PROVIDER: str({ choices: ['openai', 'claude', 'openrouter', 'mock'], default: 'claude' }),
 
   OPENAI_API_KEY: str({ default: '' }),
   OPENAI_MODEL: str({ default: 'gpt-4o-mini' }),
 
   ANTHROPIC_API_KEY: str({ default: '' }),
-  CLAUDE_MODEL: str({ default: 'claude-sonnet-5' }),
+  CLAUDE_MODEL: str({ default: 'claude-haiku-4-5-20251001' }),
 
   OPENROUTER_API_KEY: str({ default: '' }),
   OPENROUTER_MODEL: str({ default: 'openai/gpt-4o-mini' }),
