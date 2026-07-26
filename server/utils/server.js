@@ -14,6 +14,7 @@ const channelRouter = require('../routes/channels');
 const questionRouter = require('../routes/questions');
 const replyRouter = require('../routes/replies');
 const blogRouter = require('../routes/blogs');
+const userRouter = require('../routes/users');
 
 function createServer() {
   const app = express();
@@ -39,6 +40,7 @@ function createServer() {
   app.use(`${versionPrefix}/questions`, questionRouter);
   app.use(`${versionPrefix}/replies`, replyRouter);
   app.use(`${versionPrefix}/blogs`, blogRouter);
+  app.use(`${versionPrefix}/users`, userRouter);
 
   app.use((req, res) =>
     sendResponse(res, 'error', {

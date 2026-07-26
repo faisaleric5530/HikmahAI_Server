@@ -95,7 +95,7 @@ const review = async ({ applicationId, reviewerPublicId, status, reviewerNote })
 
     if (status === 'approved') {
       await UserModel.update(
-        { role: 'scholar' },
+        { role: 'scholar', hash_identity: false },
         { where: { public_id: application.user_id }, transaction }
       );
     }

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const {
   channel: ChannelModel,
@@ -6,6 +7,12 @@ const {
   user: UserModel,
 } = require('../../database');
 const { APIError, ServiceErrorHandler } = require('../exceptions');
+
+const maskName = (author) => {
+  if (!author || !author.hash_identity) return author ? author.name : undefined;
+  const hash = crypto.createHash('sha1').update(author.public_id).digest('hex');
+  return `Anon#${hash.slice(0, 4)}`;
+};
 
 const toPublicChannel = (channel) => ({
   id: channel.public_id,
@@ -21,7 +28,7 @@ const toPublicQuestion = (question) => ({
   channelId: question.channel_id,
   title: question.title,
   body: question.body,
-  authorName: question.author ? question.author.name : undefined,
+  authorName: maskName(question.author),
   createdAt: question.created_at,
   updatedAt: question.updated_at,
 });
@@ -30,7 +37,7 @@ const toPublicReply = (reply) => ({
   id: reply.public_id,
   questionId: reply.question_id,
   body: reply.body,
-  authorName: reply.author ? reply.author.name : undefined,
+  authorName: maskName(reply.author),
   authorRole: reply.author ? reply.author.role : undefined,
   isVerifiedAnswer: reply.is_verified_answer,
   verifiedAt: reply.verified_at,
@@ -83,7 +90,7 @@ const listQuestions = async ({ channelId }) => {
 
     const questions = await QuestionModel.findAll({
       where: { channel_id: channelId },
-      include: [{ model: UserModel, as: 'author', attributes: ['name'] }],
+      include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity'] }],
       order: [['created_at', 'DESC']],
     });
 
@@ -108,7 +115,7 @@ const createQuestion = async ({ channelId, authorId, title, body }) => {
 
     const withAuthor = await QuestionModel.findOne({
       where: { public_id: question.public_id },
-      include: [{ model: UserModel, as: 'author', attributes: ['name'] }],
+      include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity'] }],
     });
 
     return toPublicQuestion(withAuthor);
@@ -121,7 +128,7 @@ const createQuestion = async ({ channelId, authorId, title, body }) => {
 const findQuestionOrThrow = async (questionId) => {
   const question = await QuestionModel.findOne({
     where: { public_id: questionId },
-    include: [{ model: UserModel, as: 'author', attributes: ['name'] }],
+    include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity'] }],
   });
   if (!question) throw APIError.NotFound('Question not found');
   return question;
@@ -133,7 +140,7 @@ const getQuestion = async ({ questionId }) => {
 
     const replies = await ReplyModel.findAll({
       where: { question_id: questionId },
-      include: [{ model: UserModel, as: 'author', attributes: ['name', 'role'] }],
+      include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity', 'role'] }],
       order: [['created_at', 'ASC']],
     });
 
@@ -157,7 +164,7 @@ const createReply = async ({ questionId, authorId, body }) => {
 
     const withAuthor = await ReplyModel.findOne({
       where: { public_id: reply.public_id },
-      include: [{ model: UserModel, as: 'author', attributes: ['name', 'role'] }],
+      include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity', 'role'] }],
     });
 
     return toPublicReply(withAuthor);
@@ -171,7 +178,7 @@ const verifyReply = async ({ replyId, verifierId }) => {
   try {
     const reply = await ReplyModel.findOne({
       where: { public_id: replyId },
-      include: [{ model: UserModel, as: 'author', attributes: ['name', 'role'] }],
+      include: [{ model: UserModel, as: 'author', attributes: ['name', 'public_id', 'hash_identity', 'role'] }],
     });
     if (!reply) throw APIError.NotFound('Reply not found');
 

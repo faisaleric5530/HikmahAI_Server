@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'active' },
       preferred_language: { type: DataTypes.STRING(5), allowNull: false, defaultValue: 'en' },
+      hash_identity: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       created_at: { allowNull: false, type: DataTypes.DATE, defaultValue: DataTypes.NOW },
       updated_at: { allowNull: false, type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     },

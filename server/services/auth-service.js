@@ -9,6 +9,7 @@ const toPublicUser = (user) => ({
   name: user.name,
   email: user.email,
   role: user.role,
+  hashIdentity: user.hash_identity ?? false,
   preferredLanguage: user.preferred_language,
 });
 
